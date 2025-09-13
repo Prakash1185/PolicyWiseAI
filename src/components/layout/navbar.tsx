@@ -6,14 +6,19 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ChevronDown, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import Link from "next/link";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
+import React from "react";
+
 
 export default function Navbar() {
   const navLinks = [
@@ -22,18 +27,21 @@ export default function Navbar() {
     { href: "#contact", label: "Contact" },
   ];
 
-  const features = [
+  const features: { title: string; href: string; description: string }[] = [
       {
+        title: "Analyse an insurance or policy",
         href: "/features/analyse-insurance",
-        label: "Analyse an insurance or policy",
+        description: "Upload and analyze your insurance policies to understand the fine print.",
       },
       {
+        title: "Compare policies",
         href: "/features/compare-policies",
-        label: "Compare policies",
+        description: "Compare two policy documents to spot the differences.",
       },
       {
+        title: "Summarise terms and conditions",
         href: "/features/summarise-terms",
-        label: "Summarise terms and conditions",
+        description: "Get a quick summary of long and complex terms and conditions.",
       },
   ]
 
@@ -43,18 +51,26 @@ export default function Navbar() {
         <Logo />
 
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground">
-              Features <ChevronDown className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {features.map((feature) => (
-                <DropdownMenuItem key={feature.label} asChild>
-                  <Link href={feature.href}>{feature.label}</Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="bg-transparent text-muted-foreground transition-colors hover:text-foreground">Features</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
+                    {features.map((component) => (
+                      <ListItem
+                        key={component.title}
+                        title={component.title}
+                        href={component.href}
+                      >
+                        {component.description}
+                      </ListItem>
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
 
           {navLinks.map((link) => (
             <a key={link.label} href={link.href} className="text-muted-foreground transition-colors hover:text-foreground">
@@ -83,8 +99,8 @@ export default function Navbar() {
                     <div className="text-muted-foreground">Features</div>
                     <div className="grid gap-2 pt-2">
                       {features.map((feature) => (
-                        <Link key={feature.label} href={feature.href} className="text-muted-foreground/80 transition-colors hover:text-foreground text-base font-normal">
-                          {feature.label}
+                        <Link key={feature.title} href={feature.href} className="text-muted-foreground/80 transition-colors hover:text-foreground text-base font-normal">
+                          {feature.title}
                         </Link>
                       ))}
                     </div>
@@ -106,3 +122,29 @@ export default function Navbar() {
     </header>
   );
 }
+
+const ListItem = React.forwardRef<
+  React.ElementRef<"a">,
+  React.ComponentPropsWithoutRef<"a">
+>(({ className, title, children, ...props }, ref) => {
+  return (
+    <li>
+      <NavigationMenuLink asChild>
+        <a
+          ref={ref}
+          className={cn(
+            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+            className
+          )}
+          {...props}
+        >
+          <div className="text-sm font-medium leading-none">{title}</div>
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+            {children}
+          </p>
+        </a>
+      </NavigationMenuLink>
+    </li>
+  )
+})
+ListItem.displayName = "ListItem"

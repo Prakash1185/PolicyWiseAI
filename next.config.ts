@@ -30,14 +30,23 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, nextRuntime }) => {
+    if (!isServer && nextRuntime === 'edge') {
+        config.resolve.fallback = {
+            ...config.resolve.fallback,
+            "async_hooks": false,
+        };
+    }
     if (!isServer) {
-      // Don't resolve 'async_hooks' on the client
       config.resolve.fallback = {
         ...config.resolve.fallback,
-        async_hooks: false,
+        "async_hooks": false,
       };
     }
+    config.module.rules.push({
+      test: /.*\.node$/,
+      loader: 'node-loader',
+    });
 
     return config;
   },

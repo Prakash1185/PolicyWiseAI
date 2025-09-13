@@ -8,7 +8,7 @@
 
 ## 🎥 Demo
 
-[![PolicyWise AI Demo](https://res.cloudinary.com/diboqh2zz/image/upload/v1234567890/thumbnail.png)](https://res.cloudinary.com/diboqh2zz/video/upload/v1757758591/PolicyWiseAI_-_Made_with_Clipchamp_1_om80wx.mp4)
+[![PolicyWise AI Demo](https://res.cloudinary.com/diboqh2zz/image/upload/v1757758236/Screenshot_2025-09-13_153911_z8ygmy.png)](https://res.cloudinary.com/diboqh2zz/video/upload/v1757758591/PolicyWiseAI_-_Made_with_Clipchamp_1_om80wx.mp4)
 
 
 ## 📸 Screenshots

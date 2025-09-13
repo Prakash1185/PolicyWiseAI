@@ -32,6 +32,7 @@ export default function LoginPage() {
       if (error.code !== 'auth/popup-closed-by-user') {
         toast.error("An error occurred during sign-in.");
       }
+    } finally {
       setIsSigningIn(false);
     }
   };
@@ -53,8 +54,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4">
-            <Button variant="outline" className="w-full" onClick={handleGoogleLogin}>
-            
+            <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isSigningIn}>
               <span className="ml-2">Login with Google</span>
             </Button>
           </div>

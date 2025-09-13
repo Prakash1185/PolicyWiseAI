@@ -2,9 +2,14 @@
 
 > Your AI-powered assistant for understanding complex insurance policies and legal documents
 
+# 🚀 Live Demo
+
+👉 [Click here to try PolicyWise AI](https://studio--studio-2794072808-255ab.us-central1.hosted.app/)
+
 ## 🎥 Demo
 
-[![PolicyWise AI Demo]](https://res.cloudinary.com/diboqh2zz/video/upload/v1757758591/PolicyWiseAI_-_Made_with_Clipchamp_1_om80wx.mp4)
+[![PolicyWise AI Demo](https://res.cloudinary.com/diboqh2zz/image/upload/v1234567890/thumbnail.png)](https://res.cloudinary.com/diboqh2zz/video/upload/v1757758591/PolicyWiseAI_-_Made_with_Clipchamp_1_om80wx.mp4)
+
 
 ## 📸 Screenshots
 

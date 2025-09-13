@@ -48,7 +48,9 @@ const VerdictCard = ({ verdict }: { verdict: string }) => {
         badgeVariant = 'secondary';
     }
 
-    const [verdictTitle, ...reasoning] = verdict.split(/:(.*)/s);
+    const colonIndex = verdict.indexOf(':');
+    const verdictTitle = colonIndex !== -1 ? verdict.substring(0, colonIndex) : verdict;
+    const reasoning = colonIndex !== -1 ? verdict.substring(colonIndex + 1) : '';
 
     return (
         <Card className="shadow-md hover:shadow-lg transition-shadow duration-300">
@@ -60,7 +62,7 @@ const VerdictCard = ({ verdict }: { verdict: string }) => {
                 </div>
             </CardHeader>
             <CardContent>
-                <p className="text-muted-foreground">{reasoning.join(':').trim()}</p>
+                <p className="text-muted-foreground">{reasoning.trim()}</p>
             </CardContent>
         </Card>
     );

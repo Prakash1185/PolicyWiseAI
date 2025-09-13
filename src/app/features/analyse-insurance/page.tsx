@@ -10,11 +10,16 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UploadCloud, FileText, Bot, FileWarning, BadgeCheck, ListX, ThumbsUp, ThumbsDown, Gavel, Sparkles, MessageSquare, User, Coins, Target, Info, FileBadge } from 'lucide-react';
+import { UploadCloud, FileText, Bot, FileWarning, BadgeCheck, ListX, ThumbsUp, ThumbsDown, Gavel, Sparkles, MessageSquare, User, Coins, Target, Info, FileBadge, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/context/auth-context';
+import Link from 'next/link';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+
 
 const fileToDataUri = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -70,6 +75,7 @@ const VerdictCard = ({ verdict }: { verdict: string }) => {
 
 
 export default function AnalyseInsurancePage() {
+    const { user } = useAuth();
     const [documentText, setDocumentText] = useState('');
     const [fileName, setFileName] = useState('');
     const [analysis, setAnalysis] = useState<AnalyzeInsurancePolicyOutput | null>(null);
@@ -113,8 +119,46 @@ export default function AnalyseInsurancePage() {
             }
         }
     };
+    
+    const handleSaveAnalysis = async () => {
+        if (!user || !analysis) {
+            toast.error("You must be logged in and have an analysis result to save.");
+            return;
+        }
+
+        const promise = () => new Promise(async (resolve, reject) => {
+            try {
+                const analysisToSave = {
+                    ...analysis,
+                    savedAt: serverTimestamp(),
+                    userId: user.uid,
+                };
+                const docRef = await addDoc(collection(db, "users", user.uid, "analyses"), analysisToSave);
+                resolve(docRef);
+            } catch (error) {
+                console.error("Error saving analysis: ", error);
+                reject(new Error("Failed to save analysis."));
+            }
+        });
+        
+        toast.promise(promise, {
+            loading: 'Saving analysis to your profile...',
+            success: 'Analysis saved successfully!',
+            error: (err) => err.message,
+        });
+    };
 
     const handleAnalyze = async () => {
+        if (!user) {
+            toast.error("Please log in to analyze documents.", {
+                action: {
+                    label: "Login",
+                    onClick: () => window.location.href = '/login',
+                },
+            });
+            return;
+        }
+
         setIsLoading(true);
         setAnalysis(null);
         setRecommendation(null);
@@ -300,8 +344,14 @@ export default function AnalyseInsurancePage() {
                         {analysis && (
                             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="mt-12 grid gap-8">
                                 <Card>
-                                    <CardHeader>
+                                    <CardHeader className="flex flex-row justify-between items-center">
                                         <CardTitle className="flex items-center gap-2 text-2xl"><FileBadge className="text-primary"/>Policy Details</CardTitle>
+                                        {user && (
+                                            <Button variant="outline" onClick={handleSaveAnalysis}>
+                                                <Save className="mr-2 h-4 w-4"/>
+                                                Save to Profile
+                                            </Button>
+                                        )}
                                     </CardHeader>
                                     <CardContent className="grid sm:grid-cols-2 gap-4 text-base">
                                         <div className="flex items-center gap-3">

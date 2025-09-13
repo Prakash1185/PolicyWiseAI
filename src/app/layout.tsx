@@ -5,7 +5,6 @@ import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
-import { AuthProvider } from "@/context/auth-context";
 
 export const metadata: Metadata = {
   title: "PolicyWise AI",
@@ -38,14 +37,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
             <div className="relative flex min-h-dvh flex-col">
               <Navbar />
               <main className="flex-1">{children}</main>
               <Footer />
             </div>
             <Toaster richColors />
-          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

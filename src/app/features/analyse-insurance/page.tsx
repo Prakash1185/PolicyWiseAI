@@ -10,15 +10,11 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UploadCloud, FileText, Bot, FileWarning, BadgeCheck, ListX, ThumbsUp, ThumbsDown, Gavel, Sparkles, MessageSquare, User, Coins, Target, Info, FileBadge, Save, Send } from 'lucide-react';
+import { UploadCloud, FileText, Bot, FileWarning, BadgeCheck, ListX, ThumbsUp, ThumbsDown, Gavel, Sparkles, MessageSquare, User, Coins, Target, Info, FileBadge, Save, Send, Shield, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/context/auth-context';
-import Link from 'next/link';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 const fileToDataUri = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -36,19 +32,22 @@ type ChatMessage = {
 
 const VerdictCard = ({ verdict }: { verdict: string }) => {
     const lowerVerdict = verdict.toLowerCase();
-    let Icon, colorClass, badgeVariant: "default" | "destructive" | "secondary" | "outline";
+    let Icon, colorClass, bgClass, badgeVariant: "default" | "destructive" | "secondary" | "outline";
 
     if (lowerVerdict.includes('safe')) {
         Icon = BadgeCheck;
-        colorClass = 'text-emerald-500';
+        colorClass = 'text-emerald-600';
+        bgClass = 'from-emerald-50 to-emerald-100 border-emerald-200 dark:from-emerald-950 dark:to-emerald-900 dark:border-emerald-800';
         badgeVariant = 'default';
     } else if (lowerVerdict.includes('risky')) {
         Icon = FileWarning;
-        colorClass = 'text-rose-500';
+        colorClass = 'text-rose-600';
+        bgClass = 'from-rose-50 to-rose-100 border-rose-200 dark:from-rose-950 dark:to-rose-900 dark:border-rose-800';
         badgeVariant = 'destructive';
     } else {
         Icon = Gavel;
-        colorClass = 'text-amber-500';
+        colorClass = 'text-amber-600';
+        bgClass = 'from-amber-50 to-amber-100 border-amber-200 dark:from-amber-950 dark:to-amber-900 dark:border-amber-800';
         badgeVariant = 'secondary';
     }
 
@@ -57,26 +56,29 @@ const VerdictCard = ({ verdict }: { verdict: string }) => {
     const reasoning = colonIndex !== -1 ? verdict.substring(colonIndex + 1) : '';
 
     return (
-        <div className="relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-card via-card to-card/80 backdrop-blur-sm shadow-lg">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5" />
-            <div className="relative p-6">
-                <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-background/80 shadow-sm">
-                        <Icon className={`h-6 w-6 ${colorClass}`} />
+        <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className={`relative overflow-hidden rounded-2xl border bg-gradient-to-br ${bgClass} p-6 shadow-lg`}
+        >
+            <div className="flex items-start gap-4">
+                <div className={`flex h-14 w-14 items-center justify-center rounded-xl bg-white/80 shadow-sm dark:bg-gray-900/80`}>
+                    <Icon className={`h-7 w-7 ${colorClass}`} />
+                </div>
+                <div className="flex-1 space-y-3">
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Final Verdict</h3>
+                        <Badge variant={badgeVariant} className="text-sm font-medium">{verdictTitle}</Badge>
                     </div>
-                    <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-foreground mb-2">Final Verdict</h3>
-                        <Badge variant={badgeVariant} className="mb-3">{verdictTitle}</Badge>
-                        <p className="text-muted-foreground leading-relaxed">{reasoning.trim()}</p>
-                    </div>
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{reasoning.trim()}</p>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 };
 
 export default function AnalyseInsurancePage() {
-    const { user } = useAuth();
     const [documentText, setDocumentText] = useState('');
     const [fileName, setFileName] = useState('');
     const [analysis, setAnalysis] = useState<AnalyzeInsurancePolicyOutput | null>(null);
@@ -121,45 +123,7 @@ export default function AnalyseInsurancePage() {
         }
     };
     
-    const handleSaveAnalysis = async () => {
-        if (!user || !analysis) {
-            toast.error("You must be logged in and have an analysis result to save.");
-            return;
-        }
-
-        const promise = () => new Promise(async (resolve, reject) => {
-            try {
-                const analysisToSave = {
-                    ...analysis,
-                    savedAt: serverTimestamp(),
-                    userId: user.uid,
-                };
-                const docRef = await addDoc(collection(db, "users", user.uid, "analyses"), analysisToSave);
-                resolve(docRef);
-            } catch (error) {
-                console.error("Error saving analysis: ", error);
-                reject(new Error("Failed to save analysis."));
-            }
-        });
-        
-        toast.promise(promise, {
-            loading: 'Saving analysis to your profile...',
-            success: 'Analysis saved successfully!',
-            error: (err) => err.message,
-        });
-    };
-
     const handleAnalyze = async () => {
-        if (!user) {
-            toast.error("Please log in to analyze documents.", {
-                action: {
-                    label: "Login",
-                    onClick: () => window.location.href = '/login',
-                },
-            });
-            return;
-        }
-
         setIsLoading(true);
         setAnalysis(null);
         setRecommendation(null);
@@ -267,295 +231,381 @@ export default function AnalyseInsurancePage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
-            <div className="container mx-auto py-8 px-4">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+            <div className="container mx-auto p-6">
+                {/* Header */}
                 <motion.div 
-                    initial={{ opacity: 0, y: 20 }} 
+                    initial={{ opacity: 0, y: -20 }} 
                     animate={{ opacity: 1, y: 0 }} 
                     transition={{ duration: 0.6 }}
-                    className="max-w-5xl mx-auto"
+                    className="text-center mb-8"
                 >
-                    {/* Header Card */}
-                    <Card className="mb-8 border-0 shadow-xl bg-gradient-to-r from-card via-card to-card/95 backdrop-blur-sm overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5" />
-                        <CardHeader className="relative p-8">
-                            <div className="flex items-center gap-6">
-                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 backdrop-blur-sm shadow-lg">
-                                    <Bot className="h-8 w-8 text-primary" />
-                                </div>
-                                <div>
-                                    <CardTitle className="text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                                        AI Insurance Co-Pilot
+                    <div className="flex items-center justify-center gap-4 mb-4">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg">
+                            <Bot className="h-8 w-8 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-slate-100 dark:to-slate-400 bg-clip-text text-transparent">
+                                AI Insurance Co-Pilot
+                            </h1>
+                            <p className="text-lg text-muted-foreground mt-1">
+                                Your expert partner for understanding complex insurance policies
+                            </p>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Main Layout */}
+                <div className="flex flex-col xl:flex-row gap-8 max-w-7xl mx-auto">
+                    {/* Left Side - Upload & Analysis */}
+                    <div className="flex-1 xl:w-2/3 space-y-8">
+                        {/* Upload Section */}
+                        <motion.div 
+                            initial={{ opacity: 0, x: -20 }} 
+                            animate={{ opacity: 1, x: 0 }} 
+                            transition={{ duration: 0.6, delay: 0.1 }}
+                        >
+                            <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                                <CardHeader className="pb-6">
+                                    <CardTitle className="text-2xl flex items-center gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                                            <FileText className="h-5 w-5 text-primary" />
+                                        </div>
+                                        Upload Document
                                     </CardTitle>
-                                    <CardDescription className="text-lg text-muted-foreground mt-2">
-                                        Your expert partner for understanding complex insurance policies
+                                    <CardDescription>
+                                        Upload your insurance policy or paste the text to get started
                                     </CardDescription>
-                                </div>
-                            </div>
-                        </CardHeader>
-                    </Card>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <Tabs defaultValue="text" className="w-full">
+                                        <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50 h-12 rounded-xl">
+                                            <TabsTrigger value="text" className="text-base font-medium rounded-lg">
+                                                <FileText className="h-5 w-5 mr-2" />
+                                                Paste Text
+                                            </TabsTrigger>
+                                            <TabsTrigger value="pdf" className="text-base font-medium rounded-lg">
+                                                <UploadCloud className="h-5 w-5 mr-2" />
+                                                Upload PDF
+                                            </TabsTrigger>
+                                        </TabsList>
+                                        
+                                        <TabsContent value="text">
+                                            <Textarea
+                                                placeholder="Paste your document text here..."
+                                                className="min-h-[280px] text-base border-border/30 focus:ring-primary/20 bg-background/50 backdrop-blur-sm resize-none rounded-xl"
+                                                value={documentText}
+                                                onChange={(e) => {
+                                                    setDocumentText(e.target.value);
+                                                    setFile(null);
+                                                    setFileName('');
+                                                }}
+                                                disabled={isLoading}
+                                            />
+                                        </TabsContent>
+                                        
+                                        <TabsContent value="pdf">
+                                            <div 
+                                                className={`relative border-2 border-dashed border-border/50 rounded-xl p-12 text-center transition-all duration-300 bg-background/30 backdrop-blur-sm ${
+                                                    isLoading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-primary/50 hover:bg-primary/5'
+                                                }`}
+                                                onClick={() => !isLoading && fileInputRef.current?.click()}
+                                            >
+                                                <input
+                                                    type="file"
+                                                    ref={fileInputRef}
+                                                    onChange={handleFileChange}
+                                                    className="hidden"
+                                                    accept="application/pdf"
+                                                    disabled={isLoading}
+                                                />
+                                                <UploadCloud className="mx-auto h-14 w-14 text-muted-foreground/60 mb-4" />
+                                                <p className="text-lg font-medium text-foreground mb-2">
+                                                    {fileName ? `Selected: ${fileName}` : "Click to upload a PDF file"}
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    PDF files only, up to 10MB
+                                                </p>
+                                            </div>
+                                        </TabsContent>
+                                    </Tabs>
 
-                    {/* Main Analysis Card */}
-                    <Card className="border-0 shadow-xl bg-card/50 backdrop-blur-sm mb-8">
-                        <CardContent className="p-8">
-                            <Tabs defaultValue="text" className="w-full">
-                                <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted/30 h-14 rounded-xl">
-                                    <TabsTrigger value="text" className="text-base font-medium rounded-lg">
-                                        <FileText className="h-5 w-5 mr-2" />
-                                        Paste Text
-                                    </TabsTrigger>
-                                    <TabsTrigger value="pdf" className="text-base font-medium rounded-lg">
-                                        <UploadCloud className="h-5 w-5 mr-2" />
-                                        Upload PDF
-                                    </TabsTrigger>
-                                </TabsList>
-                                
-                                <TabsContent value="text">
-                                    <div className="relative">
-                                        <Textarea
-                                            placeholder="Paste your document text here..."
-                                            className="min-h-[300px] text-base border-border/30 focus:ring-primary/20 bg-background/50 backdrop-blur-sm resize-none rounded-xl"
-                                            value={documentText}
-                                            onChange={(e) => {
-                                                setDocumentText(e.target.value);
-                                                setFile(null);
-                                                setFileName('');
-                                            }}
-                                            disabled={isLoading}
-                                        />
+                                    <div className="flex justify-center pt-4">
+                                        <Button 
+                                            onClick={handleAnalyze} 
+                                            disabled={isLoading || (!documentText.trim() && !file)} 
+                                            size="lg"
+                                            className="px-10 py-3 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+                                        >
+                                            {isLoading ? (
+                                                <>
+                                                    <div className="mr-2 h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                    Analyzing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Sparkles className="mr-2 h-5 w-5" />
+                                                    Analyze Document
+                                                </>
+                                            )}
+                                        </Button>
                                     </div>
-                                </TabsContent>
-                                
-                                <TabsContent value="pdf">
-                                    <div 
-                                        className={`relative border-2 border-dashed border-border/50 rounded-xl p-16 text-center transition-all duration-300 bg-background/30 backdrop-blur-sm ${
-                                            isLoading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-primary/50 hover:bg-primary/5'
-                                        }`}
-                                        onClick={() => !isLoading && fileInputRef.current?.click()}
-                                    >
-                                        <input
-                                            type="file"
-                                            ref={fileInputRef}
-                                            onChange={handleFileChange}
-                                            className="hidden"
-                                            accept="application/pdf"
-                                            disabled={isLoading}
-                                        />
-                                        <UploadCloud className="mx-auto h-16 w-16 text-muted-foreground/60" />
-                                        <p className="mt-6 text-lg font-medium text-foreground">
-                                            {fileName ? `Selected: ${fileName}` : "Click to upload a PDF file"}
-                                        </p>
-                                        <p className="mt-2 text-sm text-muted-foreground">
-                                            PDF files only, up to 10MB
-                                        </p>
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
-
-                            <div className="mt-8 flex justify-center">
-                                <Button 
-                                    onClick={handleAnalyze} 
-                                    disabled={isLoading || (!documentText.trim() && !file)} 
-                                    size="lg"
-                                    className="px-8 py-3 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                            Analyzing...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Sparkles className="mr-2 h-5 w-5" />
-                                            Analyze Document
-                                        </>
+                                    
+                                    {isLoading && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="space-y-4"
+                                        >
+                                            <div className="relative">
+                                                <Progress value={progress} className="w-full h-3 rounded-full" />
+                                                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full blur-sm" />
+                                            </div>
+                                            <p className="text-center text-muted-foreground font-medium">
+                                                AI is reading the fine print... please wait
+                                            </p>
+                                        </motion.div>
                                     )}
-                                </Button>
-                            </div>
-                            
-                            {isLoading && (
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+
+                        {/* Analysis Results */}
+                        <AnimatePresence>
+                            {analysis && (
                                 <motion.div 
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="mt-8 space-y-4"
+                                    initial={{ opacity: 0, x: -20 }} 
+                                    animate={{ opacity: 1, x: 0 }} 
+                                    transition={{ duration: 0.6, delay: 0.2 }}
+                                    className="space-y-8"
                                 >
-                                    <div className="relative">
-                                        <Progress value={progress} className="w-full h-3 rounded-full" />
-                                        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full blur-sm" />
-                                    </div>
-                                    <p className="text-center text-muted-foreground font-medium">
-                                        AI is reading the fine print... please wait
-                                    </p>
+                                    {/* Policy Details */}
+                                    <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                                        <CardHeader className="flex flex-row justify-between items-center">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                                                    <FileBadge className="h-5 w-5 text-primary" />
+                                                </div>
+                                                <CardTitle className="text-2xl">Policy Details</CardTitle>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="space-y-6">
+                                            <div className="grid sm:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <span className="text-sm font-medium text-muted-foreground">Policy Name</span>
+                                                    <p className="text-lg font-semibold text-foreground bg-muted/30 rounded-lg px-4 py-2">
+                                                        {analysis.policyName || 'N/A'}
+                                                    </p>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <span className="text-sm font-medium text-muted-foreground">Policy Number</span>
+                                                    <p className="text-lg font-semibold text-foreground bg-muted/30 rounded-lg px-4 py-2">
+                                                        {analysis.policyNumber || 'N/A'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* AI Analysis Results */}
+                                    <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                                        <CardHeader>
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                                                    <Sparkles className="h-5 w-5 text-primary" />
+                                                </div>
+                                                <CardTitle className="text-2xl">AI Analysis Results</CardTitle>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="space-y-8">
+                                            {/* Final Verdict */}
+                                            <VerdictCard verdict={analysis.final_verdict} />
+                                            
+                                            {/* Policy Overview */}
+                                            <div className="space-y-4">
+                                                <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                                                    <Info className="h-5 w-5 text-primary" />
+                                                    Policy Overview
+                                                </h3>
+                                                <div className="rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 p-6 border border-blue-100 dark:border-blue-900">
+                                                    <p className="text-foreground/90 leading-relaxed">{analysis.overview}</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Detailed Analysis */}
+                                            <Accordion type="single" collapsible className="w-full space-y-4" defaultValue="pros-cons">
+                                                <AccordionItem value="pros-cons" className="border-0 rounded-xl bg-gradient-to-r from-green-50 to-red-50 dark:from-green-950/30 dark:to-red-950/30 px-6 shadow-sm">
+                                                    <AccordionTrigger className="text-lg font-semibold hover:no-underline py-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 dark:bg-slate-800/80">
+                                                                <Shield className="h-4 w-4 text-primary" />
+                                                            </div>
+                                                            Pros & Cons Analysis
+                                                        </div>
+                                                    </AccordionTrigger>
+                                                    <AccordionContent className="pb-6">
+                                                        <div className="grid md:grid-cols-2 gap-8">
+                                                            <div className="space-y-4">
+                                                                <h4 className="flex items-center gap-2 font-semibold text-emerald-700 dark:text-emerald-400">
+                                                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900">
+                                                                        <ThumbsUp className="h-3 w-3"/>
+                                                                    </div>
+                                                                    Advantages
+                                                                </h4>
+                                                                <ul className="space-y-3">
+                                                                    {analysis.pros_cons.pros.map((pro, i) => (
+                                                                        <motion.li 
+                                                                            key={i}
+                                                                            initial={{ opacity: 0, x: -10 }}
+                                                                            animate={{ opacity: 1, x: 0 }}
+                                                                            transition={{ delay: i * 0.1 }}
+                                                                            className="flex items-start gap-3 bg-white/60 dark:bg-slate-800/60 rounded-lg p-3"
+                                                                        >
+                                                                            <div className="h-2 w-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0" />
+                                                                            <span className="text-foreground/80">{pro}</span>
+                                                                        </motion.li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                            <div className="space-y-4">
+                                                                <h4 className="flex items-center gap-2 font-semibold text-rose-700 dark:text-rose-400">
+                                                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-900">
+                                                                        <ThumbsDown className="h-3 w-3"/>
+                                                                    </div>
+                                                                    Disadvantages
+                                                                </h4>
+                                                                <ul className="space-y-3">
+                                                                    {analysis.pros_cons.cons.map((con, i) => (
+                                                                        <motion.li 
+                                                                            key={i}
+                                                                            initial={{ opacity: 0, x: -10 }}
+                                                                            animate={{ opacity: 1, x: 0 }}
+                                                                            transition={{ delay: i * 0.1 }}
+                                                                            className="flex items-start gap-3 bg-white/60 dark:bg-slate-800/60 rounded-lg p-3"
+                                                                        >
+                                                                            <div className="h-2 w-2 rounded-full bg-rose-500 mt-2 flex-shrink-0" />
+                                                                            <span className="text-foreground/80">{con}</span>
+                                                                        </motion.li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </AccordionContent>
+                                                </AccordionItem>
+                                                
+                                                <AccordionItem value="benefits" className="border-0 rounded-xl bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 px-6 shadow-sm">
+                                                    <AccordionTrigger className="text-lg font-semibold hover:no-underline py-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 dark:bg-slate-800/80">
+                                                                <BadgeCheck className="h-4 w-4 text-blue-600" />
+                                                            </div>
+                                                            Key Benefits
+                                                        </div>
+                                                    </AccordionTrigger>
+                                                    <AccordionContent className="pb-6">
+                                                        <ul className="space-y-3">
+                                                            {analysis.benefits.map((benefit, i) => (
+                                                                <motion.li 
+                                                                    key={i}
+                                                                    initial={{ opacity: 0, x: -10 }}
+                                                                    animate={{ opacity: 1, x: 0 }}
+                                                                    transition={{ delay: i * 0.1 }}
+                                                                    className="flex items-start gap-3 bg-white/60 dark:bg-slate-800/60 rounded-lg p-3"
+                                                                >
+                                                                    <div className="h-2 w-2 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
+                                                                    <span className="text-foreground/80">{benefit}</span>
+                                                                </motion.li>
+                                                            ))}
+                                                        </ul>
+                                                    </AccordionContent>
+                                                </AccordionItem>
+                                                
+                                                <AccordionItem value="risks" className="border-0 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 px-6 shadow-sm">
+                                                    <AccordionTrigger className="text-lg font-semibold hover:no-underline py-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 dark:bg-slate-800/80">
+                                                                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                                                            </div>
+                                                            Risks & Exclusions
+                                                        </div>
+                                                    </AccordionTrigger>
+                                                    <AccordionContent className="pb-6">
+                                                        <ul className="space-y-3">
+                                                            {analysis.risks.map((risk, i) => (
+                                                                <motion.li 
+                                                                    key={i}
+                                                                    initial={{ opacity: 0, x: -10 }}
+                                                                    animate={{ opacity: 1, x: 0 }}
+                                                                    transition={{ delay: i * 0.1 }}
+                                                                    className="flex items-start gap-3 bg-white/60 dark:bg-slate-800/60 rounded-lg p-3"
+                                                                >
+                                                                    <div className="h-2 w-2 rounded-full bg-amber-500 mt-2 flex-shrink-0" />
+                                                                    <span className="text-foreground/80">{risk}</span>
+                                                                </motion.li>
+                                                            ))}
+                                                        </ul>
+                                                    </AccordionContent>
+                                                </AccordionItem>
+                                                
+                                                <AccordionItem value="future_problems" className="border-0 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 px-6 shadow-sm">
+                                                    <AccordionTrigger className="text-lg font-semibold hover:no-underline py-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 dark:bg-slate-800/80">
+                                                                <FileWarning className="h-4 w-4 text-purple-600" />
+                                                            </div>
+                                                            Potential Future Problems
+                                                        </div>
+                                                    </AccordionTrigger>
+                                                    <AccordionContent className="pb-6">
+                                                        <ul className="space-y-3">
+                                                            {analysis.future_problems.map((problem, i) => (
+                                                                <motion.li 
+                                                                    key={i}
+                                                                    initial={{ opacity: 0, x: -10 }}
+                                                                    animate={{ opacity: 1, x: 0 }}
+                                                                    transition={{ delay: i * 0.1 }}
+                                                                    className="flex items-start gap-3 bg-white/60 dark:bg-slate-800/60 rounded-lg p-3"
+                                                                >
+                                                                    <div className="h-2 w-2 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
+                                                                    <span className="text-foreground/80">{problem}</span>
+                                                                </motion.li>
+                                                            ))}
+                                                        </ul>
+                                                    </AccordionContent>
+                                                </AccordionItem>
+                                            </Accordion>
+                                        </CardContent>
+                                    </Card>
                                 </motion.div>
                             )}
-                        </CardContent>
-                    </Card>
+                        </AnimatePresence>
+                    </div>
 
-                    {/* Results Section */}
-                    <AnimatePresence>
-                        {analysis && (
-                            <motion.div 
-                                initial={{ opacity: 0, y: 20 }} 
-                                animate={{ opacity: 1, y: 0 }} 
-                                transition={{ duration: 0.6, delay: 0.2 }}
-                                className="space-y-8"
-                            >
-                                {/* Policy Details */}
-                                <Card className="border-0 shadow-xl bg-card/50 backdrop-blur-sm">
-                                    <CardHeader className="flex flex-row justify-between items-center p-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                                                <FileBadge className="h-5 w-5 text-primary" />
-                                            </div>
-                                            <CardTitle className="text-2xl">Policy Details</CardTitle>
-                                        </div>
-                                        {user && (
-                                            <Button variant="outline" onClick={handleSaveAnalysis} className="rounded-lg">
-                                                <Save className="mr-2 h-4 w-4"/>
-                                                Save to Profile
-                                            </Button>
-                                        )}
-                                    </CardHeader>
-                                    <CardContent className="p-6 pt-0">
-                                        <div className="grid sm:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <span className="text-sm font-medium text-muted-foreground">Policy Name</span>
-                                                <p className="text-lg font-medium text-foreground">{analysis.policyName || 'N/A'}</p>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <span className="text-sm font-medium text-muted-foreground">Policy Number</span>
-                                                <p className="text-lg font-medium text-foreground">{analysis.policyNumber || 'N/A'}</p>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                {/* AI Analysis */}
-                                <Card className="border-0 shadow-xl bg-card/50 backdrop-blur-sm">
-                                    <CardHeader className="p-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                                                <Sparkles className="h-5 w-5 text-primary" />
-                                            </div>
-                                            <CardTitle className="text-2xl">AI Analysis</CardTitle>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="p-6 pt-0 space-y-8">
-                                        <VerdictCard verdict={analysis.final_verdict} />
-                                        
-                                        <div className="space-y-4">
-                                            <h3 className="text-xl font-semibold text-foreground">Policy Overview</h3>
-                                            <div className="rounded-xl bg-muted/30 p-6">
-                                                <p className="text-muted-foreground leading-relaxed">{analysis.overview}</p>
-                                            </div>
-                                        </div>
-
-                                        <Accordion type="single" collapsible className="w-full space-y-4" defaultValue="pros-cons">
-                                            <AccordionItem value="pros-cons" className="border rounded-xl bg-background/30 px-6">
-                                                <AccordionTrigger className="text-lg font-semibold hover:no-underline py-6">
-                                                    Pros & Cons Analysis
-                                                </AccordionTrigger>
-                                                <AccordionContent className="pb-6">
-                                                    <div className="grid md:grid-cols-2 gap-8">
-                                                        <div className="space-y-4">
-                                                            <h4 className="flex items-center gap-2 font-semibold text-emerald-600">
-                                                                <ThumbsUp className="h-5 w-5"/>
-                                                                Pros
-                                                            </h4>
-                                                            <ul className="space-y-3">
-                                                                {analysis.pros_cons.pros.map((pro, i) => (
-                                                                    <li key={i} className="flex items-start gap-3">
-                                                                        <div className="h-2 w-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0" />
-                                                                        <span className="text-muted-foreground">{pro}</span>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
-                                                        <div className="space-y-4">
-                                                            <h4 className="flex items-center gap-2 font-semibold text-rose-600">
-                                                                <ThumbsDown className="h-5 w-5"/>
-                                                                Cons
-                                                            </h4>
-                                                            <ul className="space-y-3">
-                                                                {analysis.pros_cons.cons.map((con, i) => (
-                                                                    <li key={i} className="flex items-start gap-3">
-                                                                        <div className="h-2 w-2 rounded-full bg-rose-500 mt-2 flex-shrink-0" />
-                                                                        <span className="text-muted-foreground">{con}</span>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </AccordionContent>
-                                            </AccordionItem>
-                                            
-                                            <AccordionItem value="benefits" className="border rounded-xl bg-background/30 px-6">
-                                                <AccordionTrigger className="text-lg font-semibold hover:no-underline py-6">
-                                                    Key Benefits
-                                                </AccordionTrigger>
-                                                <AccordionContent className="pb-6">
-                                                    <ul className="space-y-3">
-                                                        {analysis.benefits.map((benefit, i) => (
-                                                            <li key={i} className="flex items-start gap-3">
-                                                                <div className="h-2 w-2 rounded-full bg-primary mt-2 flex-shrink-0" />
-                                                                <span className="text-muted-foreground">{benefit}</span>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </AccordionContent>
-                                            </AccordionItem>
-                                            
-                                            <AccordionItem value="risks" className="border rounded-xl bg-background/30 px-6">
-                                                <AccordionTrigger className="text-lg font-semibold hover:no-underline py-6">
-                                                    Risks & Exclusions
-                                                </AccordionTrigger>
-                                                <AccordionContent className="pb-6">
-                                                    <ul className="space-y-3">
-                                                        {analysis.risks.map((risk, i) => (
-                                                            <li key={i} className="flex items-start gap-3">
-                                                                <div className="h-2 w-2 rounded-full bg-amber-500 mt-2 flex-shrink-0" />
-                                                                <span className="text-muted-foreground">{risk}</span>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </AccordionContent>
-                                            </AccordionItem>
-                                            
-                                            <AccordionItem value="future_problems" className="border rounded-xl bg-background/30 px-6">
-                                                <AccordionTrigger className="text-lg font-semibold hover:no-underline py-6">
-                                                    Potential Future Problems
-                                                </AccordionTrigger>
-                                                <AccordionContent className="pb-6">
-                                                    <ul className="space-y-3">
-                                                        {analysis.future_problems.map((problem, i) => (
-                                                            <li key={i} className="flex items-start gap-3">
-                                                                <div className="h-2 w-2 rounded-full bg-rose-500 mt-2 flex-shrink-0" />
-                                                                <span className="text-muted-foreground">{problem}</span>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </AccordionContent>
-                                            </AccordionItem>
-                                        </Accordion>
-                                    </CardContent>
-                                </Card>
-
-                                {/* Personalized Recommendation */}
-                                <Card className="border-0 shadow-xl bg-card/50 backdrop-blur-sm">
-                                    <CardHeader className="p-6">
+                    {/* Right Side - Chat & Recommendation */}
+                    <div className="xl:w-1/3 space-y-8">
+                        <motion.div 
+                            initial={{ opacity: 0, x: 20 }} 
+                            animate={{ opacity: 1, x: 0 }} 
+                            transition={{ duration: 0.6, delay: 0.3 }}
+                            className="sticky top-6 space-y-8"
+                        >
+                            {/* Personalized Recommendation */}
+                            {analysis && (
+                                <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                                    <CardHeader>
                                         <div className="flex items-center gap-3">
                                             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                                                 <User className="h-5 w-5 text-primary" />
                                             </div>
                                             <div>
-                                                <CardTitle className="text-2xl">Personalized Recommendation</CardTitle>
-                                                <CardDescription className="mt-1">Tell us about yourself to get a tailored recommendation</CardDescription>
+                                                <CardTitle className="text-xl">Personal Recommendation</CardTitle>
+                                                <CardDescription>Get tailored advice based on your profile</CardDescription>
                                             </div>
                                         </div>
                                     </CardHeader>
-                                    <CardContent className="p-6 pt-0 space-y-6">
-                                        <div className="grid sm:grid-cols-3 gap-6">
-                                            <div className="space-y-3">
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
                                                 <Label htmlFor="age" className="flex items-center gap-2 text-sm font-medium">
                                                     <User className="h-4 w-4"/>
                                                     Age
@@ -566,10 +616,10 @@ export default function AnalyseInsurancePage() {
                                                     placeholder="e.g., 35" 
                                                     value={userContext.age} 
                                                     onChange={e => setUserContext({...userContext, age: e.target.value})}
-                                                    className="rounded-lg"
+                                                    className="rounded-lg bg-background/50"
                                                 />
                                             </div>
-                                            <div className="space-y-3">
+                                            <div className="space-y-2">
                                                 <Label htmlFor="salary" className="flex items-center gap-2 text-sm font-medium">
                                                     <Coins className="h-4 w-4"/>
                                                     Annual Salary (USD)
@@ -580,10 +630,10 @@ export default function AnalyseInsurancePage() {
                                                     placeholder="e.g., 75000" 
                                                     value={userContext.salary} 
                                                     onChange={e => setUserContext({...userContext, salary: e.target.value})}
-                                                    className="rounded-lg"
+                                                    className="rounded-lg bg-background/50"
                                                 />
                                             </div>
-                                            <div className="space-y-3">
+                                            <div className="space-y-2">
                                                 <Label htmlFor="goal" className="flex items-center gap-2 text-sm font-medium">
                                                     <Target className="h-4 w-4"/>
                                                     Investment Goal
@@ -593,7 +643,7 @@ export default function AnalyseInsurancePage() {
                                                     placeholder="e.g., Retirement, Education" 
                                                     value={userContext.goal} 
                                                     onChange={e => setUserContext({...userContext, goal: e.target.value})}
-                                                    className="rounded-lg"
+                                                    className="rounded-lg bg-background/50"
                                                 />
                                             </div>
                                         </div>
@@ -601,9 +651,19 @@ export default function AnalyseInsurancePage() {
                                         <Button 
                                             onClick={handleGetRecommendation} 
                                             disabled={isRecoLoading}
-                                            className="rounded-lg"
+                                            className="w-full rounded-lg bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
                                         >
-                                            {isRecoLoading ? "Generating..." : "Get My Recommendation"}
+                                            {isRecoLoading ? (
+                                                <>
+                                                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                    Generating...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Sparkles className="mr-2 h-4 w-4" />
+                                                    Get Recommendation
+                                                </>
+                                            )}
                                         </Button>
                                         
                                         {isRecoLoading && <Progress value={progress} className="w-full h-2 rounded-full" />}
@@ -612,44 +672,54 @@ export default function AnalyseInsurancePage() {
                                             <motion.div 
                                                 initial={{opacity: 0, y: 10}} 
                                                 animate={{opacity: 1, y: 0}}
-                                                className="rounded-xl border-l-4 border-primary bg-primary/5 p-6"
+                                                className="rounded-xl bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/30 dark:to-blue-950/30 p-4 border border-green-100 dark:border-green-900/30"
                                             >
                                                 <h4 className="font-semibold flex items-center gap-2 mb-3 text-foreground">
-                                                    <Info className="h-5 w-5" /> 
+                                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+                                                        <Info className="h-3 w-3 text-green-600 dark:text-green-400" />
+                                                    </div>
                                                     Your Recommendation
                                                 </h4>
-                                                <p className="text-muted-foreground leading-relaxed">{recommendation}</p>
+                                                <p className="text-foreground/80 leading-relaxed text-sm">{recommendation}</p>
                                             </motion.div>
                                         )}
                                     </CardContent>
                                 </Card>
+                            )}
 
-                                {/* Chat Section */}
-                                <Card className="border-0 shadow-xl bg-card/50 backdrop-blur-sm">
-                                    <CardHeader className="p-6">
+                            {/* Chat Section */}
+                            {analysis && (
+                                <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                                    <CardHeader>
                                         <div className="flex items-center gap-3">
                                             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                                                 <MessageSquare className="h-5 w-5 text-primary" />
                                             </div>
                                             <div>
-                                                <CardTitle className="text-2xl">Chat with Your Policy</CardTitle>
-                                                <CardDescription className="mt-1">Ask follow-up questions about your policy analysis</CardDescription>
+                                                <CardTitle className="text-xl">Chat with AI</CardTitle>
+                                                <CardDescription>Ask questions about your policy</CardDescription>
                                             </div>
                                         </div>
                                     </CardHeader>
-                                    <CardContent className="p-6 pt-0">
-                                        <div className="h-96 overflow-y-auto rounded-xl bg-muted/20 p-6 space-y-4 mb-4">
+                                    <CardContent className="space-y-4">
+                                        <div className="h-80 overflow-y-auto rounded-xl bg-gradient-to-b from-muted/20 to-muted/40 p-4 space-y-4">
                                             {chatHistory.map((msg, i) => (
-                                                <div key={i} className={`flex items-start gap-4 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                                                <motion.div 
+                                                    key={i} 
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: i * 0.1 }}
+                                                    className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}
+                                                >
                                                     {msg.role === 'bot' && (
                                                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
                                                             <Bot className="h-4 w-4 text-primary"/>
                                                         </div>
                                                     )}
-                                                    <div className={`rounded-xl px-4 py-3 max-w-[80%] ${
+                                                    <div className={`rounded-xl px-4 py-3 max-w-[85%] ${
                                                         msg.role === 'user' 
-                                                            ? 'bg-primary text-primary-foreground shadow-sm' 
-                                                            : 'bg-background shadow-sm border border-border/50'
+                                                            ? 'bg-gradient-to-r from-primary to-accent text-white shadow-md' 
+                                                            : 'bg-white dark:bg-slate-800 shadow-sm border border-border/50'
                                                     }`}>
                                                         <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                                                     </div>
@@ -658,46 +728,46 @@ export default function AnalyseInsurancePage() {
                                                             <User className="h-4 w-4 text-muted-foreground"/>
                                                         </div>
                                                     )}
-                                                </div>
+                                                </motion.div>
                                             ))}
                                             {isChatLoading && (
-                                                <div className="flex items-start gap-4">
+                                                <div className="flex items-start gap-3">
                                                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
                                                         <Bot className="h-4 w-4 text-primary"/>
                                                     </div>
-                                                    <div className="rounded-xl px-4 py-3 bg-background shadow-sm border border-border/50 animate-pulse">
+                                                    <div className="rounded-xl px-4 py-3 bg-white dark:bg-slate-800 shadow-sm border border-border/50">
                                                         <div className="flex space-x-2">
-                                                            <div className="h-2 w-2 bg-muted-foreground/50 rounded-full animate-bounce"></div>
-                                                            <div className="h-2 w-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                                                            <div className="h-2 w-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                                            <div className="h-2 w-2 bg-primary/60 rounded-full animate-bounce"></div>
+                                                            <div className="h-2 w-2 bg-primary/60 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                                                            <div className="h-2 w-2 bg-primary/60 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
                                         
-                                        <form onSubmit={handleChatSubmit} className="flex gap-3">
+                                        <form onSubmit={handleChatSubmit} className="flex gap-2">
                                             <Input 
                                                 value={chatInput}
                                                 onChange={e => setChatInput(e.target.value)}
-                                                placeholder="e.g., Explain the 'pre-existing conditions' clause..."
+                                                placeholder="Ask about your policy..."
                                                 disabled={isChatLoading}
                                                 className="flex-1 rounded-xl bg-background/50"
                                             />
                                             <Button 
                                                 type="submit" 
                                                 disabled={isChatLoading || !chatInput.trim()}
-                                                className="rounded-xl px-6"
+                                                className="rounded-xl px-4 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
                                             >
                                                 <Send className="h-4 w-4" />
                                             </Button>
                                         </form>
                                     </CardContent>
                                 </Card>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </motion.div>
+                            )}
+                        </motion.div>
+                    </div>
+                </div>
             </div>
         </div>
     );

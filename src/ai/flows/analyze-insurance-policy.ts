@@ -25,6 +25,9 @@ const AnalyzeInsurancePolicyInputSchema = z.object({
 export type AnalyzeInsurancePolicyInput = z.infer<typeof AnalyzeInsurancePolicyInputSchema>;
 
 const AnalyzeInsurancePolicyOutputSchema = z.object({
+  isPolicy: z.boolean().describe('Whether the document is an insurance policy or not.'),
+  policyName: z.string().optional().describe('The official name or title of the insurance policy.'),
+  policyNumber: z.string().optional().describe('The unique identifier or policy number.'),
   overview: z.string().describe('A short, plain English summary of the insurance policy, explaining its core purpose and coverage in simple terms. Maximum 2-3 sentences.'),
   benefits: z.array(z.string()).describe('A comprehensive list of key benefits provided by the policy. Be specific and clear.'),
   risks: z.array(z.string()).describe('A list of all significant exclusions, hidden clauses, and potential penalties. Quote or reference the source section where possible.'),
@@ -61,7 +64,12 @@ const analysisPrompt = ai.definePrompt({
   output: {schema: AnalyzeInsurancePolicyOutputSchema},
   prompt: `You are an expert insurance advisor with 20 years of experience. Your goal is to provide a clear, unbiased, and comprehensive analysis of an insurance policy document for a non-expert user.
 
-  Analyze the following insurance policy document and return a structured JSON object. Your language should be simple, direct, and easy to understand. Avoid jargon where possible.
+  First, determine if the provided document is an insurance policy. If it is not, set 'isPolicy' to false and fill the other fields with brief messages indicating the document is not a policy.
+
+  If it IS an insurance policy, set 'isPolicy' to true and perform the following analysis:
+  1. Extract the Policy Name and Policy Number.
+  2. Provide a clear, unbiased, and comprehensive analysis of the insurance policy document.
+  3. Return a structured JSON object with the specified schema. Your language should be simple, direct, and easy to understand. Avoid jargon where possible.
 
   {{#if documentText}}
   Document Text:
@@ -89,6 +97,9 @@ const analyzeInsurancePolicyFlow = ai.defineFlow(
       throw new Error('Either documentText or documentDataUri must be provided.');
     }
     const {output} = await analysisPrompt(input);
+    if (!output!.isPolicy) {
+      throw new Error("The provided document does not appear to be an insurance policy. Please upload a valid policy.");
+    }
     return output!;
   }
 );

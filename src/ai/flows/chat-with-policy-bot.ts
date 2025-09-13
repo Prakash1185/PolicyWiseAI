@@ -18,7 +18,7 @@ const ChatMessageSchema = z.object({
 });
 
 const ChatWithPolicyBotInputSchema = z.object({
-  analysis: z.any().describe('The JSON object of the insurance policy analysis.'),
+  analysis: z.custom<AnalyzeInsurancePolicyOutput>().describe('The JSON object of the insurance policy analysis.'),
   chatHistory: z.array(ChatMessageSchema).describe('The history of the conversation so far.'),
 });
 export type ChatWithPolicyBotInput = z.infer<typeof ChatWithPolicyBotInputSchema>;
@@ -34,7 +34,10 @@ export async function chatWithPolicyBot(input: ChatWithPolicyBotInput): Promise<
 
 const prompt = ai.definePrompt({
   name: 'chatWithPolicyBotPrompt',
-  input: { schema: ChatWithPolicyBotInputSchema },
+  input: { schema: z.object({
+    analysisJson: z.string(),
+    chatHistory: z.array(ChatMessageSchema),
+  }) },
   output: { schema: ChatWithPolicyBotOutputSchema },
   prompt: `You are an AI assistant that helps users understand their insurance policy analysis.
 You will be given the full analysis of their policy and the conversation history.
@@ -44,7 +47,7 @@ Keep your answers concise and easy to understand.
 
 **Policy Analysis Document:**
 \`\`\`json
-{{{jsonStringify analysis}}}
+{{{analysisJson}}}
 \`\`\`
 
 **Conversation History:**
@@ -64,13 +67,10 @@ const chatWithPolicyBotFlow = ai.defineFlow(
     outputSchema: ChatWithPolicyBotOutputSchema,
   },
   async (input) => {
-    // Genkit's handlebars implementation doesn't have a built-in json stringify helper.
-    // So we inject it into the input before calling the prompt.
-    const augmentedInput = {
-        ...input,
-        jsonStringify: (obj: any) => JSON.stringify(obj, null, 2),
-    }
-    const { output } = await prompt(augmentedInput);
+    const { output } = await prompt({
+        analysisJson: JSON.stringify(input.analysis, null, 2),
+        chatHistory: input.chatHistory,
+    });
     return output!;
   }
 );

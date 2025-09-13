@@ -10,7 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UploadCloud, FileText, Bot, AlertTriangle, BadgeCheck, ListX, ThumbsUp, ThumbsDown, Gavel, FileWarning, Sparkles, MessageSquare, User, Coins, Target } from 'lucide-react';
+import { UploadCloud, FileText, Bot, FileWarning, BadgeCheck, ListX, ThumbsUp, ThumbsDown, Gavel, Sparkles, MessageSquare, User, Coins, Target, Info, FileBadge } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
@@ -90,7 +90,7 @@ export default function AnalyseInsurancePage() {
         let timer: NodeJS.Timeout;
         if (isLoading) {
             setProgress(0);
-            const duration = 30000;
+            const duration = 30000; // Simulate a 30-second analysis
             const interval = duration / 100;
             timer = setInterval(() => {
                 setProgress(prev => Math.min(prev + 1, 95));
@@ -134,7 +134,7 @@ export default function AnalyseInsurancePage() {
                 resolve(result);
             } catch (err) {
                 console.error('Error analyzing document:', err);
-                reject(err);
+                reject(err instanceof Error ? err : new Error('An unknown error occurred.'));
             }
         });
 
@@ -298,10 +298,26 @@ export default function AnalyseInsurancePage() {
 
                     <AnimatePresence>
                         {analysis && (
-                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="mt-12 space-y-8">
+                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="mt-12 grid gap-8">
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle className="flex items-center gap-2 text-2xl"><Sparkles className="text-primary"/>Policy Analysis</CardTitle>
+                                        <CardTitle className="flex items-center gap-2 text-2xl"><FileBadge className="text-primary"/>Policy Details</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="grid sm:grid-cols-2 gap-4 text-base">
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-semibold text-muted-foreground">Policy Name:</span>
+                                            <span className="text-foreground">{analysis.policyName || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-semibold text-muted-foreground">Policy Number:</span>
+                                            <span className="text-foreground">{analysis.policyNumber || 'N/A'}</span>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2 text-2xl"><Sparkles className="text-primary"/>AI Analysis</CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-6">
                                         <VerdictCard verdict={analysis.final_verdict} />
@@ -311,19 +327,19 @@ export default function AnalyseInsurancePage() {
                                             <p className="text-muted-foreground mt-2">{analysis.overview}</p>
                                         </div>
 
-                                        <Accordion type="single" collapsible className="w-full">
+                                        <Accordion type="single" collapsible className="w-full" defaultValue="pros-cons">
                                             <AccordionItem value="pros-cons">
                                                 <AccordionTrigger className="text-lg font-semibold">Pros & Cons</AccordionTrigger>
                                                 <AccordionContent className="grid md:grid-cols-2 gap-6 pt-4">
                                                     <div className="space-y-2">
                                                         <h4 className="flex items-center gap-2 font-semibold text-green-600"><ThumbsUp/> Pros</h4>
-                                                        <ul className="list-disc list-inside text-muted-foreground">
+                                                        <ul className="list-disc list-inside text-muted-foreground space-y-1">
                                                             {analysis.pros_cons.pros.map((pro, i) => <li key={i}>{pro}</li>)}
                                                         </ul>
                                                     </div>
                                                     <div className="space-y-2">
                                                         <h4 className="flex items-center gap-2 font-semibold text-red-600"><ThumbsDown/> Cons</h4>
-                                                        <ul className="list-disc list-inside text-muted-foreground">
+                                                        <ul className="list-disc list-inside text-muted-foreground space-y-1">
                                                             {analysis.pros_cons.cons.map((con, i) => <li key={i}>{con}</li>)}
                                                         </ul>
                                                     </div>
@@ -380,8 +396,10 @@ export default function AnalyseInsurancePage() {
                                         <Button onClick={handleGetRecommendation} disabled={isRecoLoading}>
                                             {isRecoLoading ? "Generating..." : "Get My Recommendation"}
                                         </Button>
+                                        {isRecoLoading && <Progress value={progress} className="w-full h-1 mt-2" />}
                                         {recommendation && (
                                             <motion.div initial={{opacity: 0}} animate={{opacity: 1}} className="border-l-4 border-primary bg-primary/5 p-4 mt-4 rounded-r-lg">
+                                                <h4 className="font-semibold flex items-center gap-2 mb-2"><Info /> Recommendation</h4>
                                                 <p className="text-muted-foreground">{recommendation}</p>
                                             </motion.div>
                                         )}
@@ -398,8 +416,8 @@ export default function AnalyseInsurancePage() {
                                             {chatHistory.map((msg, i) => (
                                                 <div key={i} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                                                     {msg.role === 'bot' && <Bot className="h-6 w-6 text-primary flex-shrink-0"/>}
-                                                    <div className={`rounded-lg px-4 py-2 max-w-[80%] ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}>
-                                                        <p className="text-sm">{msg.content}</p>
+                                                    <div className={`rounded-lg px-4 py-2 max-w-[80%] ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background shadow-sm'}`}>
+                                                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                                                     </div>
                                                     {msg.role === 'user' && <User className="h-6 w-6 text-muted-foreground flex-shrink-0"/>}
                                                 </div>
@@ -407,8 +425,9 @@ export default function AnalyseInsurancePage() {
                                             {isChatLoading && (
                                                 <div className="flex items-start gap-3">
                                                     <Bot className="h-6 w-6 text-primary flex-shrink-0"/>
-                                                    <div className="rounded-lg px-4 py-2 bg-background animate-pulse">
-                                                        <div className="h-2.5 bg-gray-300 rounded-full w-24"></div>
+                                                    <div className="rounded-lg px-4 py-2 bg-background shadow-sm animate-pulse w-2/3">
+                                                        <div className="h-3 bg-slate-200 rounded-full w-1/2 mb-2"></div>
+                                                        <div className="h-2 bg-slate-200 rounded-full w-full"></div>
                                                     </div>
                                                 </div>
                                             )}

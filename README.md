@@ -4,20 +4,24 @@
 
 ## 🎥 Demo
 
-[![PolicyWise AI Demo](https://img.shields.io/badge/Watch_Demo-▶️-red?style=for-the-badge)](https://your-demo-video-link.com)
+[![PolicyWise AI Demo]](https://res.cloudinary.com/diboqh2zz/video/upload/v1757758591/PolicyWiseAI_-_Made_with_Clipchamp_1_om80wx.mp4)
 
 ## 📸 Screenshots
 
 <div align="center">
 
-### Dashboard
-![Dashboard](https://via.placeholder.com/800x400/4A90E2/FFFFFF?text=PolicyWise+AI+Dashboard)
+### Homepage
+![Homepage](https://res.cloudinary.com/diboqh2zz/image/upload/v1757758236/Screenshot_2025-09-13_153911_z8ygmy.png)
 
 ### Policy Analysis
-![Policy Analysis](https://via.placeholder.com/800x400/28A745/FFFFFF?text=AI+Policy+Analysis)
+![Policy Analysis](https://res.cloudinary.com/diboqh2zz/image/upload/v1757758236/Screenshot_2025-09-13_153920_na4wi3.png)
 
 ### Comparison Tool
-![Comparison](https://via.placeholder.com/800x400/FFC107/FFFFFF?text=Policy+Comparison)
+![Comparison](https://res.cloudinary.com/diboqh2zz/image/upload/v1757758235/Screenshot_2025-09-13_153927_d0cj9x.png)
+
+### Terms and Condition Summarizer
+![T&C Summarizer](https://res.cloudinary.com/diboqh2zz/image/upload/v1757758236/Screenshot_2025-09-13_153935_hckec2.png)
+
 
 </div>
 

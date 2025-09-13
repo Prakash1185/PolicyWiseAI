@@ -19,15 +19,15 @@ const AnalyzeInsurancePolicyInputSchema = z.object({
 export type AnalyzeInsurancePolicyInput = z.infer<typeof AnalyzeInsurancePolicyInputSchema>;
 
 const AnalyzeInsurancePolicyOutputSchema = z.object({
-  overview: z.string().describe('A short, plain English summary of the insurance policy.'),
-  benefits: z.array(z.string()).describe('A list of key benefits provided by the policy.'),
-  risks: z.array(z.string()).describe('A list of exclusions, hidden clauses, and penalties.'),
-  future_problems: z.array(z.string()).describe('A list of possible future issues like surrender problems, claim rejection, or low returns.'),
+  overview: z.string().describe('A short, plain English summary of the insurance policy, explaining its core purpose and coverage in simple terms.'),
+  benefits: z.array(z.string()).describe('A comprehensive list of key benefits provided by the policy. Be specific and clear.'),
+  risks: z.array(z.string()).describe('A list of all significant exclusions, hidden clauses, and potential penalties. Quote or reference the source section where possible.'),
+  future_problems: z.array(z.string()).describe('A list of possible future issues that could arise, such as problems with surrendering the policy, claim rejections, or lower-than-expected returns.'),
   pros_cons: z.object({
-    pros: z.array(z.string()).describe('A list of pros of the policy.'),
-    cons: z.array(z.string()).describe('A list of cons of the policy.'),
+    pros: z.array(z.string()).describe('A list of clear advantages or pros of this policy.'),
+    cons: z.array(z.string()).describe('A list of clear disadvantages or cons of this policy.'),
   }),
-  final_verdict: z.string().describe('The final verdict on the policy (e.g., "Safe", "Risky", or "Neutral") with clear reasoning.'),
+  final_verdict: z.string().describe('Provide a final verdict on the policy (e.g., "Safe", "Risky", or "Neutral") and accompany it with clear, concise reasoning based on the analysis.'),
 });
 
 export type AnalyzeInsurancePolicyOutput = z.infer<typeof AnalyzeInsurancePolicyOutputSchema>;
@@ -40,7 +40,9 @@ const prompt = ai.definePrompt({
   name: 'analyzeInsurancePolicyPrompt',
   input: {schema: AnalyzeInsurancePolicyInputSchema},
   output: {schema: AnalyzeInsurancePolicyOutputSchema},
-  prompt: `You are an expert insurance advisor. Analyze the following insurance policy document and return a JSON object with the specified keys.
+  prompt: `You are an expert insurance advisor with 20 years of experience. Your goal is to provide a clear, unbiased, and comprehensive analysis of an insurance policy document for a non-expert user.
+
+  Analyze the following insurance policy document and return a structured JSON object with the specified keys. Your language should be simple, direct, and easy to understand. Avoid jargon where possible.
 
   {{#if documentText}}
   Document Text:
@@ -51,6 +53,8 @@ const prompt = ai.definePrompt({
   Document File:
   {{media url=documentDataUri}}
   {{/if}}
+
+  Your response must be in a JSON format.
   `,
 });
 

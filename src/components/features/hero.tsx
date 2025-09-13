@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export default function Hero() {
   return (
@@ -12,9 +13,11 @@ export default function Hero() {
           Effortlessly understand complex legal documents. PolicyWise AI simplifies insurance policies, terms of service, and privacy policies, helping you make informed decisions.
         </p>
         <div className="mt-10 flex items-center justify-center gap-x-6">
-          <Button size="lg"  >
-            Get Started For Free
-            <ArrowRight className="ml-2 h-5 w-5" />
+          <Button size="lg" asChild >
+            <Link href="/login">
+              Get Started For Free
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
           </Button>
         </div>
       </div>

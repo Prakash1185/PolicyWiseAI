@@ -7,6 +7,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
+import Link from "next/link";
 
 export default function Navbar() {
   const navLinks = [
@@ -31,7 +32,9 @@ export default function Navbar() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Button className="hidden sm:flex">Get Started</Button>
+          <Button className="hidden sm:flex" asChild>
+            <Link href="/login">Get Started</Link>
+          </Button>
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="md:hidden">
@@ -49,7 +52,9 @@ export default function Navbar() {
                     </a>
                   ))}
                 </nav>
-                <Button>Get Started</Button>
+                <Button asChild>
+                  <Link href="/login">Get Started</Link>
+                </Button>
               </div>
             </SheetContent>
           </Sheet>

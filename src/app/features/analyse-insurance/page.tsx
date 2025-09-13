@@ -10,7 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UploadCloud, FileText, Bot, FileWarning, BadgeCheck, ListX, ThumbsUp, ThumbsDown, Gavel, Sparkles, MessageSquare, User, Coins, Target, Info, FileBadge, Save, Send, Shield, AlertTriangle } from 'lucide-react';
+import { UploadCloud, FileText, Bot, FileWarning, BadgeCheck, ListX, ThumbsUp, ThumbsDown, Gavel, Sparkles, MessageSquare, User, Coins, Target, Info, FileBadge, Send, Shield, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';

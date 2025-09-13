@@ -16,20 +16,24 @@ export default function LoginPage() {
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
+    // Redirect if the user is already authenticated when the page loads
     if (!isAuthLoading && user) {
       router.push('/profile');
     }
   }, [user, isAuthLoading, router]);
-  
+
   const handleGoogleLogin = async () => {
     if (isSigningIn) return;
     setIsSigningIn(true);
     try {
+      // The sign-in process
       const result = await signInWithPopup(auth, googleProvider);
       toast.success(`Welcome, ${result.user.displayName}!`);
+      // Redirect ONLY after the promise has resolved
       router.push('/profile');
     } catch (error: any) {
       console.error("Google login error:", error);
+      // Only show a toast if it's an actual error, not the user closing the popup.
       if (error.code !== 'auth/popup-closed-by-user') {
         toast.error("An error occurred during sign-in.");
       }
@@ -38,6 +42,7 @@ export default function LoginPage() {
     }
   };
   
+  // Show a loader while checking auth state or if user exists (and is about to be redirected)
   if (isAuthLoading || user) {
     return (
         <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center p-4">
@@ -46,6 +51,7 @@ export default function LoginPage() {
     )
   }
 
+  // Render the login form
   return (
     <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center p-4">
       <Card className="w-full max-w-sm">

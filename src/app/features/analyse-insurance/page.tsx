@@ -242,7 +242,7 @@ export default function AnalyseInsurancePage() {
                                 </div>
                                 <div>
                                     <CardTitle className="text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                                        AI Insurance Co-Pilot
+                                        AI Insurance Analyser
                                     </CardTitle>
                                     <CardDescription className="text-lg text-muted-foreground mt-2">
                                         Your expert partner for understanding complex insurance policies

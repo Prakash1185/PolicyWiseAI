@@ -14,6 +14,7 @@ import { UploadCloud, FileText, Bot, AlertTriangle, BadgeCheck, ListX, ThumbsUp,
 import { motion, AnimatePresence } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const fileToDataUri = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -46,7 +47,7 @@ const VerdictCard = ({ verdict }: { verdict: string }) => {
         colorClass = 'text-yellow-500';
         badgeVariant = 'secondary';
     }
-    
+
     const [verdictTitle, ...reasoning] = verdict.split(/:(.*)/s);
 
     return (

@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { Loader2 } from 'lucide-react';
 
 interface AuthContextType {
   user: User | null;
@@ -25,17 +24,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  if (isLoading) {
-    return (
-        <div className="flex justify-center items-center h-screen">
-            <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-    )
-  }
-
   return (
     <AuthContext.Provider value={{ user, isLoading }}>
-      {children}
+      {!isLoading && children}
     </AuthContext.Provider>
   );
 };

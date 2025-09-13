@@ -12,16 +12,17 @@ import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (!isAuthLoading && user) {
       router.push('/profile');
     }
-  }, [user, router]);
+  }, [user, isAuthLoading, router]);
   
   const handleGoogleLogin = async () => {
+    if (isSigningIn) return;
     setIsSigningIn(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
@@ -37,7 +38,7 @@ export default function LoginPage() {
     }
   };
   
-  if (isLoading || isSigningIn || user) {
+  if (isAuthLoading || user) {
     return (
         <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center p-4">
             <Loader2 className="h-10 w-10 animate-spin" />
@@ -55,7 +56,7 @@ export default function LoginPage() {
         <CardContent>
           <div className="flex flex-col gap-4">
             <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isSigningIn}>
-              <span className="ml-2">Login with Google</span>
+              {isSigningIn ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="ml-2">Login with Google</span>}
             </Button>
           </div>
         </CardContent>
